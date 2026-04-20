@@ -1,0 +1,28 @@
+{
+  "name": "airgap-web",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc && vite build",
+    "build:demo": "tsc && vite build --config vite.demo.config.ts",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vite": "^8.0.9"
+  },
+  "dependencies": {
+    "airgap": "https://github.com/rkz-app/airgap/releases/download/v0.2.3/airgap-0.1.0.tgz",
+    "zxing-wasm": "^3.0.2"
+  }
+}
