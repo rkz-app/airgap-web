@@ -5,12 +5,14 @@
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/src/index.d.ts"
     }
   },
   "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "vite --host",
     "build": "tsc && vite build",
@@ -18,8 +20,10 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/node": "^25.7.0",
     "typescript": "~6.0.2",
-    "vite": "^8.0.9"
+    "vite": "^8.0.9",
+    "vite-plugin-dts": "^5.0.0"
   },
   "dependencies": {
     "airgap": "https://github.com/rkz-app/airgap/releases/download/v0.2.3/airgap-0.1.0.tgz",
