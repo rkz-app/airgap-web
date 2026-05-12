@@ -1,7 +1,7 @@
 import { ensureWasmReady } from './wasm.ts'
 import { openModal } from './modal.ts'
 import { PlayerView } from './player.ts'
-import { ScannerView } from './scanner.ts'
+import {CaptureFrameSize, ScannerView} from './scanner.ts'
 
 export { ScanCancelledError }
 
@@ -35,7 +35,7 @@ export async function openPlayer(data: Uint8Array, title: string): Promise<void>
  * Resolves with the decoded `Uint8Array` when all chunks are received.
  * Rejects with `ScanCancelledError` if the modal is closed before completion.
  */
-export async function openScanner(title: string): Promise<Uint8Array> {
+export async function openScanner(title: string, captureFrameSize: CaptureFrameSize = {width: 640, height: 480}): Promise<Uint8Array> {
   await ensureWasmReady()
 
   return new Promise((resolve, reject) => {
@@ -54,7 +54,7 @@ export async function openScanner(title: string): Promise<Uint8Array> {
         view = new ScannerView(content, {
           onSuccess: data => settle(() => { close(); resolve(data) }),
           onCancel:  ()   => settle(() => { close(); reject(new ScanCancelledError()) }),
-        })
+        },captureFrameSize);
 
         // If the user hits the X button while scanning, treat it as cancel.
         // openModal resolves its own promise when closed — we hook into that

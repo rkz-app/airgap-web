@@ -1,6 +1,6 @@
 import { WasmDecoder } from 'airgap'
-import type { QRDetector } from './detector/index.ts'
-import { createDetector } from './detector/index.ts'
+import type { QRDetector } from './detector'
+import { createDetector } from './detector'
 
 type State =
   | { type: 'idle' }
@@ -30,6 +30,12 @@ const STYLES = `
 .ag-sc-p {
   font: 15px system-ui,-apple-system,sans-serif;
   color: rgba(60,60,67,0.6); max-width: 280px;
+}
+.ag-sc-hint {
+  font: 12px system-ui,-apple-system,sans-serif;
+  color: rgba(60,60,67,0.35);
+  max-width: 260px;
+  margin-top: -8px;
 }
 @media (prefers-color-scheme: dark) { .ag-sc-p { color: rgba(235,235,245,0.6); } }
 .ag-sc-icon {
@@ -108,6 +114,16 @@ function injectStyles(): void {
   document.head.appendChild(el)
 }
 
+export class CaptureFrameSize {
+  width: number
+  height: number
+
+  constructor(width: number, height: number) {
+    this.width = width
+    this.height = height
+  }
+}
+
 export class ScannerView {
   private el: HTMLElement
   private callbacks: ScannerCallbacks
@@ -116,12 +132,14 @@ export class ScannerView {
   private detector: QRDetector | null = null
   private stream: MediaStream | null = null
   private rafId: number | null = null
+  private captureFrameSize: CaptureFrameSize
   private debounceTimer: ReturnType<typeof setTimeout> | null = null
   private lastQR = ''
 
-  constructor(container: HTMLElement, callbacks: ScannerCallbacks) {
+  constructor(container: HTMLElement, callbacks: ScannerCallbacks,  captureFrameSize: CaptureFrameSize) {
     injectStyles()
     this.el = container
+    this.captureFrameSize = captureFrameSize
     this.callbacks = callbacks
     this.renderState()
   }
@@ -151,6 +169,7 @@ export class ScannerView {
             </div>
             <h2 class="ag-sc-h2">Ready to Scan</h2>
             <p class="ag-sc-p">Point your camera at an Airgap QR sequence to receive data.</p>
+            <p class="ag-sc-hint">For best performance on this device, use QRs with chunk size ≤&nbsp;500&nbsp;bytes.</p>
             <button class="ag-sc-btn ag-sc-btn-primary" id="sc-start">Start Scanning</button>
           </div>
         `
@@ -240,12 +259,10 @@ export class ScannerView {
     }
   }
 
-  // ── Scanning logic ────────────────────────────────────────────────────────
-
   private async startScanning(): Promise<void> {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: 'environment', width: { ideal: this.captureFrameSize.width }, height: { ideal: this.captureFrameSize.height } },
       })
     } catch {
       this.transition({ type: 'error', message: 'Camera access denied. Please allow camera permission and try again.' })
@@ -298,7 +315,9 @@ export class ScannerView {
       if (this.state.type !== 'scanning') return
     }
 
-    this.debounceTimer = setTimeout(() => this.scheduleFrame(), 100)
+    // 250ms = 4 fps. Fast enough to catch every QR frame in a sequence,
+    // slow enough that ZXing WASM doesn't choke the device.
+    this.debounceTimer = setTimeout(() => this.scheduleFrame(), 250)
   }
 
   private handleQR(qrStr: string): void {
